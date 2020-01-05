@@ -60,56 +60,64 @@ class Word
 	}	
 }
 
-class Ent
-{
-	public final int mod=MODNUM.prime;
-	public String entity_name,mention;
-	public int no;
-	public long hashe,hashm;
-	public Ent(String load)
-	{
-		int indexOf9=load.indexOf(9);
-		if (indexOf9>=0)
-		{
-			mention=load.substring(0, indexOf9);
-			String tmp=load.substring(indexOf9+1);
-			int t9=tmp.indexOf(9);
-			if (t9>=0)
-			{
-				entity_name=tmp.substring(0, t9);
-				String numberStr=tmp.substring(t9+1);
-				try
-				{
-					no=Integer.valueOf(numberStr);
-				}catch(Exception e){no=-1;};
+class Ent {
+	public final int mod = MODNUM.prime;
+	/**
+	 * mention: used for entity recognition, aka synonym (in specific context),
+	 * but note that one mention can point to different entities
+	 * A popular way to build such a dictionary DE is by crawling Web pages and aggregating anchor links
+	 * that point to Wikipedia entity pages.
+	 * The frequency with which a mention (anchor text), m, links to a particular entity (anchor link), c,
+	 * allows one to estimate the conditional probability pðcjmÞ
+	 */
+	public String entity_name, mention;
+	public int no;  // aka frequecy, I guess
+	public long hashe, hashm;
+
+	// TODO: the following code fragment might be kind of immature
+	public Ent(String load) {
+		int indexOf9 = load.indexOf(9);  // 9 is tab's ascii code
+		if (indexOf9 >= 0) {
+			mention = load.substring(0, indexOf9);  // assign mention; left close and right open
+			String tmp = load.substring(indexOf9 + 1);  // beginIndex; the remaining substring
+			int t9 = tmp.indexOf(9);
+			if (t9 >= 0) {
+				entity_name = tmp.substring(0, t9);
+				String numberStr = tmp.substring(t9 + 1);
+				try {
+					no = Integer.valueOf(numberStr);
+				} catch (Exception e) {
+					no = -1;
+				}
+			} else {
+				entity_name = tmp;
 			}
-			else entity_name=tmp;
-			hashe=calHash(entity_name);			
+			hashe = calHash(entity_name);
+		} else {  // return is -1 if not found
+			mention = load;
+			hashe = -1;
 		}
-		else
-		{
-			mention=load;
-			hashe=-1;
-		}
-		hashm=calHash(mention);
+		hashm = calHash(mention);
 	}
-	public long calHash(String p)
-	{
-		long x=0;
-		if (p==null || p.length()==0) return 0;
-		for (int i=0;i<p.length();i++)
-		{
-			x=x*65536+(long)(int)p.charAt(i);
-			x=x%mod;
+
+	// unknown hash method
+	public long calHash(String p) {
+		long x = 0;
+		if (p == null || p.length() == 0) return 0;
+		for (int i = 0; i < p.length(); i++) {
+			x = x * 65536 + (long) (int) p.charAt(i);
+			x = x % mod;
 		}
 		return x;
 	}
+
 	@Override
-	public int hashCode()
-	{
-		return (int)hashm;
+	public int hashCode() {
+		return (int) hashm;
 	}
-	public Ent(){};
+
+	public Ent() {
+	}
 }
 
 public class EntityRecognitionCh {
@@ -117,45 +125,43 @@ public class EntityRecognitionCh {
 	public static JiebaSegmenter segmenter = new JiebaSegmenter();
 	
 	public final static int MaxEnt=20;
-	
-	static
-	{
+
+	static {  // 静态初始器：由static和{}组成，只在类装载的时候（第一次使用类的时候）执行一次，往往用来初始化静态变量。
 		long t0 = System.currentTimeMillis();
 		List<String> nent = FileUtil.readFile("data/pkubase/paraphrase/ccksminutf.txt");
-		List<String> mention2ent = FileUtil.readFile("data/pkubase/paraphrase/pkubase-mention2ent.txt");		
+		List<String> mention2ent = FileUtil.readFile("data/pkubase/paraphrase/pkubase-mention2ent.txt");
 
-		entMap=new HashMap<>();
-		nentMap=new HashMap<>();
+		entMap = new HashMap<>();
+		nentMap = new HashMap<>();
 
 		System.out.println("Mention2Ent size: " + mention2ent.size());
-		for (String input:mention2ent)
-		{
-			Ent q=new Ent(input);
-			if (entMap.containsKey(q.mention)) 
+		for (String input : mention2ent) {
+			Ent q = new Ent(input);
+			if (entMap.containsKey(q.mention))
 				entMap.get(q.mention).add(q.entity_name);
-			else
-			{
-				List<String> l=new ArrayList<>();
+			else {
+				List<String> l = new ArrayList<>();
 				l.add(q.entity_name);
 				entMap.put(q.mention, l);
 			}
 		}
-		// mention: NOT ent word; entity_name: frequency	
-		for (String input:nent)
-		{
-			Ent q=new Ent(input);
-			if (nentMap.containsKey(q.mention)) 
+		//
+		/** mention: non-entity word; word: frequency
+		 * so for this kind of Ent, its entity_name is the "frequency"
+		 */
+		for (String input : nent) {
+			Ent q = new Ent(input);
+			if (nentMap.containsKey(q.mention)) {
 				nentMap.get(q.mention).add(q.entity_name);
-			else
-			{
-				List<String> l=new ArrayList<>();
+			} else {
+				List<String> l = new ArrayList<>();
 				l.add(q.entity_name);
 				nentMap.put(q.mention, l);
 			}
-		}		
-		
+		}
+
 		long t1 = System.currentTimeMillis();
-		System.out.println("Read Mention2Ent used "+(t1-t0)+"ms");	
+		System.out.println("Read Mention2Ent used " + (t1 - t0) + "ms");
 	}
 	
 	public static boolean isAllNumber(String q)
@@ -167,63 +173,57 @@ public class EntityRecognitionCh {
 		}
 		return ret;
 	}
-	public static String longestFirst2(String Question)
-	{
-		String ret="";
-		String input=Question.replace('{',' ').replace('}',' ');
-		
-		int len=input.length();
-		int[][] ex=new int[len+3][];
-		Ent[][] entx=new Ent[len+3][];
-		for (int i=0;i<len+2;i++) ex[i]=new int[len+3];
-		for (int i=0;i<len+2;i++) entx[i]=new Ent[len+3];
-		for (int l=1;l<=len;l++) 
-		{
-			int pos=0;
-			for (int j=l-1;j<len;j++)
-			{
-				String searchstr=input.substring(j-l+1,j+1);
-				List<String> rstlist=entMap.get(searchstr);
 
-				if (rstlist!=null && rstlist.size()>0)
-				{
+	public static String longestFirst2(String Question) {
+		String ret = "";
+		String input = Question.replace('{', ' ').replace('}', ' ');
+
+		int len = input.length();
+		int[][] ex = new int[len + 3][];
+		Ent[][] entx = new Ent[len + 3][];
+		for (int i = 0; i < len + 2; i++) ex[i] = new int[len + 3];
+		for (int i = 0; i < len + 2; i++) entx[i] = new Ent[len + 3];
+		for (int l = 1; l <= len; l++) {
+			int pos = 0;
+			for (int j = l - 1; j < len; j++) {
+				String searchstr = input.substring(j - l + 1, j + 1);  // get substring of which lenght=l
+				List<String> rstlist = entMap.get(searchstr);
+
+				if (rstlist != null && rstlist.size() > 0) {
 					++pos;
-					ex[l][pos]=j;
-					entx[l][pos]=new Ent(searchstr);
+					ex[l][pos] = j;
+					entx[l][pos] = new Ent(searchstr);
 				}
 			}
-			ex[l][0]=pos;
-		}	
-		int covered[]=new int[len+3];
-		for (int l=len;l>=1;l--)
-		{
-			for (int p=1;p<=ex[l][0];p++)
-			{
-				int flag=1;
-				for (int k=ex[l][p];k>=ex[l][p]-l+1;k--) if (covered[k]>0) flag=0;
-				if (flag==1)
-				{
+			ex[l][0] = pos;
+		}
+		int covered[] = new int[len + 3];
+		for (int l = len; l >= 1; l--) {
+			for (int p = 1; p <= ex[l][0]; p++) {
+				int flag = 1;
+				for (int k = ex[l][p]; k >= ex[l][p] - l + 1; k--) if (covered[k] > 0) flag = 0;
+				if (flag == 1) {
 					//1:占用  2:词头 4:词尾  8:其他
-					int FLAG=0;
-					List<String> nlist=nentMap.get(entx[l][p].mention);
-					if (nlist!=null && nlist.size()>0) FLAG=8;
-					if (isAllNumber(entx[l][p].mention)) FLAG=8;
-					
-					covered[ex[l][p]]|=4;
-					covered[ex[l][p]-l+1]|=2;
-					for (int k=ex[l][p];k>=ex[l][p]-l+1;k--)
-					{
-						covered[k]|=1|FLAG;
+					int FLAG = 0;
+					List<String> nlist = nentMap.get(entx[l][p].mention);
+					if (nlist != null && nlist.size() > 0) FLAG = 8;
+					if (isAllNumber(entx[l][p].mention)) FLAG = 8;
+
+					covered[ex[l][p]] |= 4;
+					covered[ex[l][p] - l + 1] |= 2;
+					for (int k = ex[l][p]; k >= ex[l][p] - l + 1; k--) {
+						covered[k] |= 1 | FLAG;
 					}
 				}
 			}
 		}
-		
-		for (int i=0;i<len;i++)
-		{
-			if ((covered[i]&2)!=0 && (covered[i]&8)==0) ret=ret+"{";
-			ret=ret+Question.charAt(i);
-			if ((covered[i]&4)!=0 && (covered[i]&8)==0) ret=ret+"}";
+
+		for (int i = 0; i < len; i++) {
+			if ((covered[i] & 2) != 0 && (covered[i] & 8) == 0)
+				ret = ret + "{";
+			ret = ret + Question.charAt(i);
+			if ((covered[i] & 4) != 0 && (covered[i] & 8) == 0)
+				ret = ret + "}";
 		}
 		//System.out.println("Longest First: "+ret);
 		//System.out.println("Time: "+(t1-t0)+"ms");
@@ -447,58 +447,49 @@ public class EntityRecognitionCh {
 		}
 		return rets2;
 	}
-	
-	public static Pair<String,List<Word>> parse(String input, JiebaSegmenter segmenter)
-	{
-//		input=removeQueryId2(input);	// Remove query id before.
-		String newinput=longestFirst2 (input);
 
-		Pair<String,List<Word>> d=null,r=new Pair<String,List<Word>>();
-		r.second=new ArrayList<>();
+	public static Pair<String, List<Word>> parse(String input, JiebaSegmenter segmenter) {
+		String newinput = longestFirst2(input);
+
+		Pair<String, List<Word>> d = null, r = new Pair<String, List<Word>>();
+		r.second = new ArrayList<>();
 		try {
-			d=processedString(newinput);
+			d = processedString(newinput);
 		} catch (Exception e) {
 			System.out.println(e);
 		}
-		if (d!=null)
-		{
+		if (d != null) {
 			//System.out.println(d.first);
-			
-			List<SegToken> q=segmenter.process(d.first, SegMode.SEARCH);
-			String secondstr="";
-			for (SegToken t:q)
-			{
-				secondstr=secondstr+t.word+",";
+
+			List<SegToken> q = segmenter.process(d.first, SegMode.SEARCH);
+			String secondstr = "";
+			for (SegToken t : q) {
+				secondstr = secondstr + t.word + ",";
 			}
 			//System.out.println("First process: "+secondstr);
 
-			String finalstring="";
-			String stickstr=reprocess(d.second,q);
-			String thirdstr=thirdprocess(stickstr,d.second);
-			
-			List<SegToken> q2=segmenter.process(thirdstr, SegMode.SEARCH);
-			for (SegToken t:q2)
-			{
-				finalstring=finalstring+t.word+",";
-				int p=circleToInt(""+t.word.charAt(0));
-				if (p!=-1)
-				{
-					Word ds=d.second.get(p-1);
-					r.second.add(new Word(ds.word,ds.type,ds.pos,entMap.get(ds.word)));
-				}
-				else
-				{
-					r.second.add(new Word(t.word,0,-1));
+			String finalstring = "";
+			String stickstr = reprocess(d.second, q);
+			String thirdstr = thirdprocess(stickstr, d.second);
+
+			List<SegToken> q2 = segmenter.process(thirdstr, SegMode.SEARCH);
+			for (SegToken t : q2) {
+				finalstring = finalstring + t.word + ",";
+				int p = circleToInt("" + t.word.charAt(0));
+				if (p != -1) {
+					Word ds = d.second.get(p - 1);
+					r.second.add(new Word(ds.word, ds.type, ds.pos, entMap.get(ds.word)));
+				} else {
+					r.second.add(new Word(t.word, 0, -1));
 				}
 			}
-			
-			System.out.println("Result: "+finalstring);
-			
-			r.first=thirdstr;
-			
+
+			System.out.println("Result: " + finalstring);
+
+			r.first = thirdstr;
+
 			return r;
-		}
-		else return null;
+		} else return null;
 	}
 	
 	public static List<nlp.ds.Word> parseSentAndRecogEnt(String sent)

@@ -28,8 +28,10 @@ public class Query
 	public Query(String _question)
 	{
 		NLQuestion = _question;
+		// some questions are inputed from dataset
 		NLQuestion = removeQueryId(NLQuestion);
-				
+
+		// normalize the question, string
 		TransferedQuestion = getTransferedQuestion(NLQuestion);	
 		
 		// step1. NODE Recognition
@@ -59,67 +61,62 @@ public class Query
 			return true;
 		return false;
 	}
-	
+
 	/**
+	 * Pay attention: the planned synonym transfer logic is not implemented even the commit is updated
 	 * some words -> equivalent words
 	 * 1、stanfordParser often parse incorrect.
 	 * 2、Synonyms unify. eg, movie->film
+	 *
 	 * @param question
 	 * @return transfered question
 	 */
-	public String getTransferedQuestion(String question)
-	{
+	public String getTransferedQuestion(String question) {
 		//discard ? ! .
-		if(question.endsWith("？") || question.endsWith("。") || question.endsWith("！"))
-			question = question.substring(0, question.length()-1);
-		
+		if (question.endsWith("？") || question.endsWith("。") || question.endsWith("！"))
+			question = question.substring(0, question.length() - 1);
+
 		//discard 《》 because stanford parser DO NOT recognize them. TODO: why?
 		question = question.replace("《", "").replace("》", "");
-		question = question.replace("“", "").replace("”", "");	// now just discard "" because they confuse the parser. 
-		
+		question = question.replace("“", "").replace("”", "");    // now just discard "" because they confuse the parser.
+
 		//rule1: discard ".", because "." and "_" will be disconnected by parser. Discard word tail's "'", which may pollutes NER
 		question = question.replace("' ", " ");
-		String [] words = question.split(" ");
+		String[] words = question.split(" ");
 		String ret = "";
-		for(String word: words)
-		{
+		for (String word : words) {
 			String retWord = word;
 			//TODO: now just check NUM in head/tail
-			if(word.length()>=2 && !isDigit(word.charAt(0)) && !isDigit(word.charAt(word.length()-1)))
-			{
+			if (word.length() >= 2 && !isDigit(word.charAt(0)) && !isDigit(word.charAt(word.length() - 1))) {
 				retWord = retWord.replace(".", "");
 			}
 			ret += retWord + " ";
 		}
-		if(ret.length()>1)
-			ret = ret.substring(0,ret.length()-1);
-		
+		if (ret.length() > 1)
+			ret = ret.substring(0, ret.length() - 1);
+
 		ret = ret.replace("-", " ");
 
-		
 		return ret;
 	}
-	
-	public String removeQueryId(String question)
-	{
+
+	public String removeQueryId(String question) {
 		String ret = question;
 		// case 1: 1\t
 		int st = question.indexOf("\t");
-		if(st!=-1 && question.length()>4 && isDigit(question.charAt(0)))
-		{
-			queryId = question.substring(0,st);
-			ret = question.substring(st+1);
-			System.out.println("Extract QueryId :"+queryId);
+		if (st != -1 && question.length() > 4 && isDigit(question.charAt(0))) {
+			queryId = question.substring(0, st);
+			ret = question.substring(st + 1);
+			System.out.println("Extract QueryId :" + queryId);
 		}
 		// case 2: q1: | 1:
 		st = question.indexOf(":");
-		if(st!=-1 && st<6  && question.length()>4 && (isDigit(question.charAt(0)) ||question.startsWith("q")))
-		{
-			queryId = question.substring(0,st).replace("q", "");
-			ret = question.substring(st+1);
-			System.out.println("Extract QueryId :"+queryId);
+		if (st != -1 && st < 6 && question.length() > 4 && (isDigit(question.charAt(0)) || question.startsWith("q"))) {
+			queryId = question.substring(0, st).replace("q", "");
+			ret = question.substring(st + 1);
+			System.out.println("Extract QueryId :" + queryId);
 		}
-		
+
 		return ret;
 	}
 }

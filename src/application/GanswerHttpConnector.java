@@ -1,3 +1,6 @@
+/** Client used for testing
+ */
+
 package application;
 
 import java.io.*;
