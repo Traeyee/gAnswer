@@ -31,7 +31,7 @@ public class QuestionParsing {
 			qlog.timeTable.put("StanfordParser", (int)(t2-t1));
 			
 		} catch (Exception e) {
-			e.printStackTrace();
+			e.printStackTrace(System.out);
 		}
 	}
 	

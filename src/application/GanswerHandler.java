@@ -43,22 +43,22 @@ public class GanswerHandler extends AbstractHandler {
             String data = request.getParameter("data");
             data = data.replace("%22", "\"");  // unescape quote
             JSONObject jsonobj = new JSONObject();
-            int needAnswer = 0;
+            int maxAnswerNum = 0;
             int needSparql = 1;
             question = "Something wrong if you see this.";
             jsonobj = new JSONObject(data);
             question = jsonobj.getString("question");
             if (jsonobj.isNull("maxAnswerNum")) {
-                needAnswer = GanswerHttp.maxAnswerNum;
+                maxAnswerNum = GanswerHttp.maxAnswerNum;
             } else {
-                needAnswer = jsonobj.getInt("maxAnswerNum");
+                maxAnswerNum = jsonobj.getInt("maxAnswerNum");
             }
             if (jsonobj.isNull("maxSparqlNum")) {
                 needSparql = GanswerHttp.maxSparqlNum;
             } else {
                 needSparql = jsonobj.getInt("maxSparqlNum");
             }
-            Globals.MaxAnswerNum = needAnswer;
+            Globals.MaxAnswerNum = maxAnswerNum;
 
             //step2 run GAnswer Logic
             String input = question;
@@ -79,7 +79,7 @@ public class GanswerHandler extends AbstractHandler {
             resobj.put("status", "200");
             resobj.put("question", jsonobj.getString("question"));
             JSONObject tmpobj = new JSONObject();
-            if (needAnswer > 0) {
+            if (maxAnswerNum > 0) {
                 if (qlog != null && qlog.rankedSparqls.size() != 0) {
                     Sparql curSpq = null;
                     Matches m = null;
