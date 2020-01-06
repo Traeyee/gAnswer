@@ -17,7 +17,7 @@ public class Query
 	public String NLQuestion = null;
 	public String TransferedQuestion = null;
 	public ArrayList<String> MergedQuestionList = null;
-	public ArrayList<Sentence> sList  = null;
+	public ArrayList<Sentence> sentenceList = null;
 	
 	public String queryId = null;
 	public String preLog = "";
@@ -39,12 +39,12 @@ public class Query
 		words = EntityRecognitionCh.parseSentAndRecogEnt(TransferedQuestion);
 		
 		// build Sentence
-		sList = new ArrayList<Sentence>();
-		sList.add(new Sentence(words, TransferedQuestion)); // TODO: TransferedQuestion or _question
+		sentenceList = new ArrayList<Sentence>();
+		sentenceList.add(new Sentence(words, TransferedQuestion)); // TODO: TransferedQuestion or _question
 //		for(String mergedQuestion: MergedQuestionList)
 //		{
 //			Sentence sentence = new Sentence(this, mergedQuestion);
-//			sList.add(sentence);
+//			sentenceList.add(sentence);
 //		}
 	}
 	

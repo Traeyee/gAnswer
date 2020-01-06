@@ -13,7 +13,6 @@ import qa.parsing.BuildQueryGraph;
 import rdf.Sparql;
 import utils.FileUtil;
 import addition.AddtionalFix;
-import qa.Globals;
 
 public class GAnswer {
 
@@ -46,8 +45,8 @@ public class GAnswer {
             // Try to solve each NR plan, and combine the ranked SPARQLs.
             // We only reserve LOG of BEST NR plan for convenience.
             // Now only 1 plan
-            for (int i = query.sList.size() - 1; i >= 0; i--) {
-                Sentence possibleSentence = query.sList.get(i);
+            for (int i = query.sentenceList.size() - 1; i >= 0; i--) {
+                Sentence possibleSentence = query.sentenceList.get(i);
                 qlog.reloadSentence(possibleSentence);
 
                 // LOG
